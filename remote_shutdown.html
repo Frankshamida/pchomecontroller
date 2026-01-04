@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="/manifest.json">
+    <title>PC Remote Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            padding-bottom: 30px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 700;
+        }
+        
+        .connection-inputs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .connection-inputs input {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #f8f9fa;
+        }
+        
+        .connection-inputs input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        .btn-connect {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s;
+        }
+        
+        .btn-connect:active {
+            transform: scale(0.98);
+        }
+        
+        .status-indicator {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        
+        .status-indicator.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-indicator.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            min-width: 80px;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-title span {
+            font-size: 22px;
+        }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+        }
+        
+        .btn-purple {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            color: white;
+        }
+        
+        /* Timer Input */
+        .timer-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .timer-input input,
+        .timer-input select {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #f8f9fa;
+        }
+        
+        .timer-input input:focus,
+        .timer-input select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        /* Timer Display */
+        .timer-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            letter-spacing: 2px;
+        }
+        
+        /* Info Text */
+        .info-text {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        /* Message Box */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 90%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .message-box.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .message-box.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .message-box.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        /* List Display */
+        .list-display {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+        
+        .list-item {
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+            color: #333;
+        }
+        
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Textarea */
+        textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 12px;
+            font-family: inherit;
+            background: #f8f9fa;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        /* Input with Button */
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #f8f9fa;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Message Card Styles */
+        .message-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .message-card .card-title {
+            color: white;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 12px;
+        }
+        
+        .message-preview {
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .preview-label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: rgba(255,255,255,0.9);
+        }
+        
+        .preview-box {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        
+        .preview-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+        
+        .preview-icon {
+            font-size: 20px;
+        }
+        
+        .preview-title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .preview-content {
+            padding: 20px 15px;
+            color: #333;
+            font-size: 15px;
+            min-height: 60px;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+        
+        .message-templates {
+            margin-bottom: 15px;
+        }
+        
+        .templates-label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: rgba(255,255,255,0.9);
+        }
+        
+        .template-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .chip {
+            background: rgba(255,255,255,0.25);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(5px);
+        }
+        
+        .chip:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.4);
+        }
+        
+        .style-chip {
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        
+        .style-chip.active {
+            background: rgba(255,255,255,0.5);
+            border: 2px solid white;
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
+        
+        .preview-box.style-warning .preview-header {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+        
+        .preview-box.style-urgent .preview-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .preview-box.style-info .preview-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+        }
+        
+        .message-card textarea {
+            background: rgba(255,255,255,0.95);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: #333;
+        }
+        
+        .message-card textarea:focus {
+            background: white;
+            border-color: white;
+        }
+        
+        .btn-send {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 16px;
+            background: white !important;
+            color: #9b59b6 !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn-send:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-icon {
+            font-size: 20px;
+        }
+        
+        .message-card .info-text {
+            color: rgba(255,255,255,0.9);
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🖥️ PC Remote Control</h1>
+            <div class="connection-inputs">
+                <input type="text" id="ipAddress" placeholder="Your PC IP (e.g., 192.168.1.14)" value="">
+                <input type="text" id="port" placeholder="Port" value="8080">
+            </div>
+            <button class="btn-connect" onclick="testConnection()">
+                <span id="connectText">Connect to PC</span>
+            </button>
+            <div id="connectionStatus" class="status-indicator disconnected">⚠️ Not Connected</div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('power')">⚡ Power</div>
+            <div class="tab" onclick="switchTab('timer')">⏰ Timer</div>
+            <div class="tab" onclick="switchTab('apps')">📱 Apps</div>
+            <div class="tab" onclick="switchTab('system')">💻 System</div>
+            <div class="tab" onclick="switchTab('media')">🎵 Media</div>
+        </div>
+
+        <!-- Power Tab -->
+        <div id="power" class="tab-content active">
+            <div class="card">
+                <div class="card-title"><span>⚡</span> Power Controls</div>
+                <button class="btn btn-danger" onclick="sendCommand('shutdown')">🔴 Shutdown Now</button>
+                <button class="btn btn-warning" onclick="sendCommand('restart')">🔄 Restart PC</button>
+                <button class="btn btn-info" onclick="sendCommand('logout')">👤 Sign Out</button>
+                <button class="btn btn-success" onclick="sendCommand('sleep')">😴 Sleep Mode</button>
+                <button class="btn btn-warning" onclick="sendCommand('lock')">🔒 Lock Screen</button>
+            </div>
+        </div>
+
+        <!-- Timer Tab -->
+        <div id="timer" class="tab-content">
+            <div class="card">
+                <div class="card-title"><span>⏰</span> Custom Timer</div>
+                <div class="timer-input">
+                    <input type="number" id="timerHours" placeholder="Hours" value="1" min="0" max="23">
+                    <input type="number" id="timerMinutes" placeholder="Minutes" value="0" min="0" max="59">
+                </div>
+                <button class="btn btn-danger" onclick="setTimerShutdown()">⏰ Set Timer Shutdown</button>
+                <button class="btn btn-info" onclick="sendCommand('cancel_timer')">❌ Cancel Timer</button>
+                <div id="timerDisplay" class="timer-display" style="display:none;">00:00:00</div>
+                <p class="info-text">PC will shutdown when timer ends</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span>🌐</span> Browse Time Limit</div>
+                <div class="timer-input">
+                    <select id="browseLimit">
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60" selected>1 hour</option>
+                        <option value="120">2 hours</option>
+                        <option value="180">3 hours</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                </div>
+                <button class="btn btn-warning" onclick="setBrowseLimit()">🕐 Start Browse Timer</button>
+                <p class="info-text">Auto-shutdown after time expires</p>
+            </div>
+        </div>
+
+        <!-- Apps Tab -->
+        <div id="apps" class="tab-content">
+            <div class="card">
+                <div class="card-title"><span>🌍</span> Close Browsers</div>
+                <button class="btn btn-warning" onclick="sendCommand('close_chrome')">Chrome</button>
+                <button class="btn btn-warning" onclick="sendCommand('close_edge')">Edge</button>
+                <button class="btn btn-warning" onclick="sendCommand('close_firefox')">Firefox</button>
+                <button class="btn btn-danger" onclick="sendCommand('close_all_browsers')">❌ Close All Browsers</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span>📊</span> Process Control</div>
+                <button class="btn btn-info" onclick="sendCommand('get_processes')">📋 View Running Apps</button>
+                <div id="processList" class="list-display" style="display:none;"></div>
+                <div class="input-group">
+                    <input type="text" id="killProcess" placeholder="App name to close">
+                </div>
+                <button class="btn btn-danger" onclick="killProcess()">❌ Close Application</button>
+            </div>
+        </div>
+
+        <!-- System Tab -->
+        <div id="system" class="tab-content">
+            <div class="card">
+                <div class="card-title"><span>💻</span> System Info</div>
+                <button class="btn btn-info" onclick="sendCommand('get_info')">📊 System Status</button>
+                <button class="btn btn-success" onclick="sendCommand('battery')">🔋 Battery Status</button>
+                <div id="systemInfo" class="list-display" style="display:none;"></div>
+            </div>
+
+            <div class="card message-card">
+                <div class="card-title"><span>💬</span> Send Message to PC</div>
+                
+                <div class="message-preview">
+                    <div class="preview-label">💻 Preview on PC:</div>
+                    <div class="preview-box" id="previewBox">
+                        <div class="preview-header" id="previewHeader">
+                            <span class="preview-icon" id="previewIcon">📱</span>
+                            <span class="preview-title" id="previewTitle">Remote Controller Message</span>
+                        </div>
+                        <div class="preview-content" id="messagePreview">Your message will appear here...</div>
+                    </div>
+                </div>
+                
+                <div class="message-templates">
+                    <div class="templates-label">🎨 Message Style:</div>
+                    <div class="template-chips">
+                        <div class="chip style-chip" data-style="normal" onclick="setStyle('normal')">📱 Normal</div>
+                        <div class="chip style-chip" data-style="warning" onclick="setStyle('warning')">⚠️ Warning</div>
+                        <div class="chip style-chip" data-style="urgent" onclick="setStyle('urgent')">🚨 Urgent</div>
+                        <div class="chip style-chip" data-style="info" onclick="setStyle('info')">ℹ️ Info</div>
+                    </div>
+                </div>
+                
+                <div class="message-templates">
+                    <div class="templates-label">⚡ Quick Messages:</div>
+                    <div class="template-chips">
+                        <div class="chip" onclick="setMessage('Time to take a break! 😊')">☕ Break Time</div>
+                        <div class="chip" onclick="setMessage('Please save your work now! 💾')">💾 Save Work</div>
+                        <div class="chip" onclick="setMessage('Dinner is ready! 🍽️')">🍽️ Dinner Ready</div>
+                        <div class="chip" onclick="setMessage('Shutting down in 5 minutes! ⚠️')">⚠️ 5 Min Warning</div>
+                        <div class="chip" onclick="setMessage('Good night! Time to sleep 🌙')">🌙 Good Night</div>
+                        <div class="chip" onclick="setMessage('Stop gaming now! 🎮')">🎮 Stop Gaming</div>
+                    </div>
+                </div>
+                
+                <textarea id="messageText" placeholder="✍️ Type your custom message here..." oninput="updatePreview()"></textarea>
+                
+                <button class="btn btn-purple btn-send" onclick="sendMessage()">
+                    <span class="btn-icon">📨</span>
+                    <span>Send Message to PC</span>
+                </button>
+                
+                <p class="info-text">💡 Beautiful popup window will appear on PC screen</p>
+            </div>
+        </div>
+
+        <!-- Media Tab -->
+        <div id="media" class="tab-content">
+            <div class="card">
+                <div class="card-title"><span>🔊</span> Volume Control</div>
+                <button class="btn btn-success" onclick="sendCommand('volume_up')">🔊 Volume Up (+10%)</button>
+                <button class="btn btn-warning" onclick="sendCommand('volume_down')">🔉 Volume Down (-10%)</button>
+                <button class="btn btn-danger" onclick="sendCommand('mute')">🔇 Mute / Unmute</button>
+                <button class="btn btn-info" onclick="sendCommand('max_volume')">📢 Maximum Volume</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box"></div>
+
+    <script>
+        let timerInterval = null;
+        let currentStyle = 'normal';
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function showMessage(message, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = 'message-box ' + type;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 4000);
+        }
+
+        async function testConnection() {
+            const ip = document.getElementById('ipAddress').value;
+            const port = document.getElementById('port').value;
+            const btn = document.getElementById('connectText');
+            
+            btn.innerHTML = '<span class="spinner"></span>';
+            
+            try {
+                const response = await fetch(`http://${ip}:${port}/test`, { method: 'GET' });
+                if (response.ok) {
+                    document.getElementById('connectionStatus').className = 'status-indicator connected';
+                    document.getElementById('connectionStatus').textContent = '✅ Connected';
+                    showMessage('✅ Connected successfully!', 'success');
+                    btn.textContent = 'Connected';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').className = 'status-indicator disconnected';
+                document.getElementById('connectionStatus').textContent = '❌ Not Connected';
+                showMessage('❌ Connection failed. Check server.', 'error');
+                btn.textContent = 'Connect to PC';
+            }
+        }
+
+        async function sendCommand(command, data = {}) {
+            const ip = document.getElementById('ipAddress').value;
+            const port = document.getElementById('port').value;
+            
+            try {
+                const response = await fetch(`http://${ip}:${port}/command`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, ...data })
+                });
+                
+                const result = await response.json();
+                
+                if (command === 'get_processes' && result.processes) {
+                    displayProcesses(result.processes);
+                } else if (command === 'get_info' && result.info) {
+                    displaySystemInfo(result.info);
+                } else if (result.message) {
+                    showMessage(result.message, result.status === 'ok' ? 'success' : 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function setTimerShutdown() {
+            const hours = parseInt(document.getElementById('timerHours').value) || 0;
+            const minutes = parseInt(document.getElementById('timerMinutes').value) || 0;
+            const totalMinutes = (hours * 60) + minutes;
+            
+            if (totalMinutes === 0) {
+                showMessage('⚠️ Please enter a valid time', 'error');
+                return;
+            }
+            
+            sendCommand('timer_shutdown', { minutes: totalMinutes });
+            startTimerDisplay(totalMinutes * 60);
+            showMessage(`⏰ Timer set: ${hours}h ${minutes}m`, 'success');
+        }
+
+        function setBrowseLimit() {
+            const select = document.getElementById('browseLimit');
+            let minutes = parseInt(select.value);
+            
+            if (select.value === 'custom') {
+                minutes = prompt('Enter minutes:');
+                if (!minutes) return;
+            }
+            
+            sendCommand('browse_limit', { minutes });
+            startTimerDisplay(minutes * 60);
+            showMessage(`🌐 Browse limit: ${minutes} minutes`, 'success');
+        }
+
+        function startTimerDisplay(seconds) {
+            const display = document.getElementById('timerDisplay');
+            display.style.display = 'block';
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            let remaining = seconds;
+            timerInterval = setInterval(() => {
+                const h = Math.floor(remaining / 3600);
+                const m = Math.floor((remaining % 3600) / 60);
+                const s = remaining % 60;
+                display.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    display.textContent = '⏰ TIME UP!';
+                }
+                remaining--;
+            }, 1000);
+        }
+
+        function killProcess() {
+            const processName = document.getElementById('killProcess').value;
+            if (processName) {
+                sendCommand('kill_process', { process: processName });
+                document.getElementById('killProcess').value = '';
+            } else {
+                showMessage('⚠️ Enter an app name', 'error');
+            }
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('messageText').value;
+            if (message) {
+                sendCommand('send_message', { message, style: currentStyle });
+                showMessage('📨 Message sent to PC!', 'success');
+                setTimeout(() => {
+                    document.getElementById('messageText').value = '';
+                    document.getElementById('messagePreview').textContent = 'Your message will appear here...';
+                }, 1000);
+            } else {
+                showMessage('⚠️ Enter a message', 'error');
+            }
+        }
+        
+        function setMessage(text) {
+            document.getElementById('messageText').value = text;
+            updatePreview();
+        }
+        
+        function setStyle(style) {
+            currentStyle = style;
+            
+            // Update active chip
+            document.querySelectorAll('.style-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            document.querySelector(`[data-style="${style}"]`).classList.add('active');
+            
+            // Update preview
+            const previewBox = document.getElementById('previewBox');
+            const previewIcon = document.getElementById('previewIcon');
+            const previewTitle = document.getElementById('previewTitle');
+            
+            previewBox.className = 'preview-box';
+            
+            if (style === 'warning') {
+                previewBox.classList.add('style-warning');
+                previewIcon.textContent = '⚠️';
+                previewTitle.textContent = 'Warning Message';
+            } else if (style === 'urgent') {
+                previewBox.classList.add('style-urgent');
+                previewIcon.textContent = '🚨';
+                previewTitle.textContent = 'URGENT MESSAGE';
+            } else if (style === 'info') {
+                previewBox.classList.add('style-info');
+                previewIcon.textContent = 'ℹ️';
+                previewTitle.textContent = 'Information';
+            } else {
+                previewIcon.textContent = '📱';
+                previewTitle.textContent = 'Remote Controller Message';
+            }
+        }
+        
+        function updatePreview() {
+            const text = document.getElementById('messageText').value;
+            const preview = document.getElementById('messagePreview');
+            preview.textContent = text || 'Your message will appear here...';
+        }
+        
+        // Initialize with normal style
+        document.addEventListener('DOMContentLoaded', () => {
+            setStyle('normal');
+            
+            // Auto-connect if IP is already filled
+            const ip = document.getElementById('ipAddress').value;
+            if (ip) {
+                setTimeout(() => {
+                    testConnection();
+                }, 500);
+            }
+            
+            // Show install prompt for PWA
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                showMessage('💡 Tip: Add to Home Screen for app-like experience!', 'info');
+            });
+        });
+
+        function displayProcesses(processes) {
+            const list = document.getElementById('processList');
+            list.innerHTML = processes.slice(0, 30).map(p => 
+                `<div class="list-item">• ${p}</div>`
+            ).join('');
+            list.style.display = 'block';
+        }
+
+        function displaySystemInfo(info) {
+            const list = document.getElementById('systemInfo');
+            list.innerHTML = Object.entries(info).map(([k,v]) => 
+                `<div class="list-item"><strong>${k}:</strong> ${v}</div>`
+            ).join('');
+            list.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
