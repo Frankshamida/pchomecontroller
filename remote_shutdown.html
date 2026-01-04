@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
     <link rel="manifest" href="/manifest.json">
@@ -735,19 +736,17 @@
         }
 
         async function testConnection() {
-            // Vercel endpoint test (always online)
+            // Local endpoint test
+            const ip = document.getElementById('ipAddress').value;
+            const port = document.getElementById('port').value;
             const btn = document.getElementById('connectText');
             btn.innerHTML = '<span class="spinner"></span>';
             try {
-                const response = await fetch(`/api/shutdown`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: 'get_info' })
-                });
+                const response = await fetch(`http://${ip}:${port}/test`, { method: 'GET' });
                 if (response.ok) {
                     document.getElementById('connectionStatus').className = 'status-indicator connected';
-                    document.getElementById('connectionStatus').textContent = '✅ Connected (Cloud)';
-                    showMessage('✅ Connected to cloud server!', 'success');
+                    document.getElementById('connectionStatus').textContent = '✅ Connected';
+                    showMessage('✅ Connected successfully!', 'success');
                     btn.textContent = 'Connected';
                 }
             } catch (error) {
@@ -759,15 +758,19 @@
         }
 
         async function sendCommand(command, data = {}) {
-            // Use Vercel API endpoint
+            // Use local Python server endpoint
+            const ip = document.getElementById('ipAddress').value;
+            const port = document.getElementById('port').value;
             try {
-                const response = await fetch(`/api/shutdown`, {
+                const response = await fetch(`http://${ip}:${port}/command`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ command, ...data })
                 });
                 const result = await response.json();
-                if (command === 'get_info' && result.info) {
+                if (command === 'get_processes' && result.processes) {
+                    displayProcesses(result.processes);
+                } else if (command === 'get_info' && result.info) {
                     displaySystemInfo(result.info);
                 } else if (result.message) {
                     showMessage(result.message, result.status === 'ok' ? 'success' : 'error');
